@@ -1,3 +1,5 @@
+/* eslint-env node */
+
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
@@ -718,25 +720,29 @@ app.post('/api/submit', async (req, res) => {
       }
       
       // Return the standard homepage view with recent tickets
-      res.json({
-        canvas: {
-          content: {
-            components: components
+      if (!responseSent) {
+        responseSent = true;
+        res.json({
+          canvas: {
+            content: {
+              components: components
+            }
           }
-        }
-      });
+        });
+      }
     }
   }, 9000); // Exactly 9 seconds - to ensure we return before Intercom's 10-second timeout
   
+  // Helper function to safely send response and avoid duplicate responses
+  const sendResponse = (responseData) => {
+    if (!responseSent) {
+      responseSent = true;
+      clearTimeout(timeoutId);
+      res.json(responseData);
+    }
+  };
+
   try {
-    // Helper function to safely send response and avoid duplicate responses
-    const sendResponse = (responseData) => {
-      if (!responseSent) {
-        responseSent = true;
-        clearTimeout(timeoutId);
-        res.json(responseData);
-      }
-    };
     
     // Log the component ID for debugging
     console.log('Component ID:', req.body.component_id);
